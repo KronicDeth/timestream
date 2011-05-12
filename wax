@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'spreadsheet'
+
+# TODO Add selector for spreadsheets
+spreadsheet = Spreadsheet.open ARGV[0] 
+worksheet = spreadsheet.worksheet "EAR - Current Week"
+
+DATE_ROW = 2
+DATE_COLUMN = 1
+
+saturday_date = worksheet.row(DATE_ROW)[DATE_COLUMN]
+project_totals_by_day = Hash.new { |hash, day|
+  hash[day] = Hash.new(0)
+}
+
+DAY_COLUMN_SPAN = 3
+PROJECT_NUMBER_COLUMN = 0
+
+# 0-indexed - rows are for this week's time
+(12 .. 36).each do |row_index|
+  row = worksheet.row(row_index)
+  project_number = row[PROJECT_NUMBER_COLUMN]
+  
+  # TODO handle Vacation / Holiday / Sick time
+  # no project number assigned
+  next if project_number.nil?
+  
+  # 0 - Weekend
+  # 1 - Monday
+  # 2 - Tuesday...
+  (0 .. 5).each do |day_index|
+    day_column = 9 + DAY_COLUMN_SPAN * day_index
+    hours = row[day_column] || 0
+    
+    total_by_project = project_totals_by_day[day_index]
+    total_by_project[project_number] += hours 
+  end
+end
+
+puts project_totals_by_day.inspect
