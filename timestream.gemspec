@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
   s.rubyforge_project = "timestream"
   
   s.add_dependency("spreadsheet")
+  s.add_dependency("terminal-table")
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
