@@ -1,3 +1,3 @@
-module Wax
+module Timestream
   # Your code goes here...
 end

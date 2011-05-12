@@ -1,18 +1,18 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require "wax/version"
+require "timestream/version"
 
 Gem::Specification.new do |s|
-  s.name        = "wax"
-  s.version     = Wax::VERSION
+  s.name        = "timestream"
+  s.version     = Timestream::VERSION
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Luke Imhoff"]
   s.email       = ["luke@cray.com"]
   s.homepage    = ""
-  s.summary     = "Work Accounting Xcelerator"
+  s.summary     = "Timestream"
   s.description = "Converts Hamster report to EAR to JDE Timecard"
 
-  s.rubyforge_project = "wax"
+  s.rubyforge_project = "timestream"
   
   s.add_dependency("spreadsheet")
 
