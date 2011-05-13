@@ -4,22 +4,8 @@ require 'terminal-table/import'
 
 module Timestream
   class EmployeeActivityReport
-    class Cell
-      attr_reader :column
-      
-      def initialize(row, column)
-        @column = column
-        @row = row
-      end
-      
-      attr_reader :row
-    end
-    
-    def cell(location)
-      worksheet.row(location.row)[location.column]
-    end
-    
-    DATE_CELL = Cell.new(2, 1)
+    DATE_COLUMN = 1
+    DATE_ROW = 2
     
     DAY_COLUMN_SPAN = 3
     
@@ -31,6 +17,10 @@ module Timestream
     
     def row(index)
       worksheet.row(index)
+    end
+    
+    def saturday
+      @saturday ||= worksheet.row(DATE_ROW)[DATE_COLUMN]
     end
     
     def spreadsheet
@@ -79,13 +69,26 @@ module Timestream
       @timestream_by_project_number
     end
     
-    def to_text_table
+    def to_text_table(date_format=:day_of_week)
       employee_activity_report = self
+      
       table {
         self.headings = ['Project Number']
-        self.headings.concat Timestream::SLOT_NAMES.collect { |name|
-          name.to_s.capitalize
-        }
+        
+        case date_format
+          when :day_of_week
+            date_format = "%A"
+          when :erp
+            date_format = "%a %m/%d"
+        end
+         
+        Timestream::SLOT_NAMES.each_index do |sunday_offset|
+          # XXX assign weekend activity to sunday to simplify math
+          sunday = employee_activity_report.saturday + 1
+          slot_date = sunday + sunday_offset
+           
+          self.headings << slot_date.strftime(date_format)
+        end
         
         employee_activity_report.timestream_by_project_number.each do |project_number, timestream|
           row = [project_number]

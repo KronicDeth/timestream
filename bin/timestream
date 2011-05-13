@@ -1,8 +1,36 @@
 #!/usr/bin/env ruby
 
+require 'optparse'
 require 'rubygems'
 require 'timestream/employee_activity_report'
+require 'timestream/version'
+
+options = {}
+
+option_parser = OptionParser.new do |option_parser|
+  option_parser.banner = "Usage: timestream [--date-format=DATE_FORMAT]"
+  
+  options[:date_format] = :day_of_week
+  option_parser.on('-d',
+          '--date-format DATE_FORMAT',
+          "Format dates according to DATE_FORMAT.  Supports DATE_FORMAT of 'day_of_week', or 'erp'.") do |date_format|
+    options[:date_format] = date_format.to_sym
+  end
+  
+  option_parser.on_tail('-h', '--help', 'Show this message') do
+    puts option_parser
+    exit
+  end
+  
+  option_parser.on_tail('--version', 'Show version') do
+    puts Timestream::VERSION
+    exit
+  end
+end
+
+option_parser.parse!
 
 employee_activity_report = Timestream::EmployeeActivityReport.new ARGV[0]
 
-puts employee_activity_report.to_text_table
+puts employee_activity_report.to_text_table(options[:date_format])
+
