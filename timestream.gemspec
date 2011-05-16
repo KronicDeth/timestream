@@ -14,6 +14,8 @@ Gem::Specification.new do |s|
 
   s.rubyforge_project = "timestream"
   
+  s.add_dependency("chronic")
+  s.add_dependency("ruby-dbus")
   s.add_dependency("spreadsheet")
   s.add_dependency("terminal-table")
 

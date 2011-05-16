@@ -4,10 +4,32 @@ require 'terminal-table/import'
 
 module Timestream
   class EmployeeActivityReport
+    ACTIVITY_COLUMN = 2
+    
     DATE_COLUMN = 1
     DATE_ROW = 2
     
     DAY_COLUMN_SPAN = 3
+    
+    def date_column(date)
+      slot = date_slot(date)
+      slot_column(slot)
+    end
+    
+    def date_slot(date)
+      day_delta = (date - saturday).to_i
+      
+      case day_delta
+        # Saturday and Sunday map to weekend
+        when 0..1
+          0
+        # All others map to their own day
+        when 2..6
+          day_delta - 1
+        else
+          raise ArgumentError, "#{date} is not in the same week as #{saturday}"
+      end
+    end
     
     def initialize(path)
       @path = path
@@ -21,6 +43,10 @@ module Timestream
     
     def saturday
       @saturday ||= worksheet.row(DATE_ROW)[DATE_COLUMN]
+    end
+    
+    def slot_column(slot)
+      9 + (slot * DAY_COLUMN_SPAN)
     end
     
     def spreadsheet
@@ -99,6 +125,37 @@ module Timestream
           add_row row
         end 
       }
+    end
+    
+    def updateFromHamster(hamster)
+      # Categories in Hamster are mapped to Activities in EAR
+      
+      hamster.timestream_by_category.each do |category, timestream|
+        # XXX should this been creating EAR Timestreams instead of updating rows directly?
+        (12 .. 36).each do |row_index|
+          row = self.row(row_index)
+          activity = row[ACTIVITY_COLUMN]
+          
+          # XXX Category is assumed to be a substring of Activity since Activity is very wordy.
+          if activity and activity.include? category
+            timestream.each do |date, hours|
+              column = self.date_column(date)
+              row[column] ||= 0
+              row[column] += hours
+            end
+          end
+        end
+      end
+    end
+    
+    def updateFromHamster!(hamster)
+      updateFromHamster(hamster)
+      
+      # spreadsheet library recommends not writing back to same file, write to
+      # temporary file and then rename that file to original.
+      temporary_path = "#{path}.timestream"
+      spreadsheet.write(temporary_path)
+      File.rename(temporary_path, path)
     end
     
     def worksheet

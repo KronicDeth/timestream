@@ -1,14 +1,17 @@
 #!/usr/bin/env ruby
 
-require 'optparse'
 require 'rubygems'
+
+require 'chronic'
+require 'optparse'
 require 'timestream/employee_activity_report'
+require 'timestream/hamster'
 require 'timestream/version'
 
 options = {}
 
 option_parser = OptionParser.new do |option_parser|
-  option_parser.banner = "Usage: timestream [--date-format=DATE_FORMAT]"
+  option_parser.banner = "Usage: timestream [--date-format=DATE_FORMAT] [--week YYYY-MM-DD]"
   
   options[:date_format] = :day_of_week
   option_parser.on('-d',
@@ -26,11 +29,37 @@ option_parser = OptionParser.new do |option_parser|
     puts Timestream::VERSION
     exit
   end
+  
+  option_parser.on('--week WEEK',
+                   "Read in data from Hamster and write it out to EAR for WEEK " \
+                   "beginning on Saturday.  Use Chronic gem for parsing WEEK, " \
+                   "so you do strings like 'last saturday'") do |week|
+    time = Chronic.parse(week, :context => :past)
+    options[:saturday] = Date.new(time.year, time.month, time.day)
+  end
 end
 
 option_parser.parse!
 
 employee_activity_report = Timestream::EmployeeActivityReport.new ARGV[0]
+
+DAYS_PER_WEEK = 7
+HOURS_PER_DAY = 24
+MINUTES_PER_HOUR = 60
+SECONDS_PER_MINUTE = 60
+HOURS_PER_WEEK = DAYS_PER_WEEK * HOURS_PER_DAY
+MINUTES_PER_WEEK = HOURS_PER_WEEK * MINUTES_PER_HOUR
+SECONDS_PER_WEEK = MINUTES_PER_WEEK * SECONDS_PER_MINUTE 
+
+if options[:saturday]
+  saturday_date = options[:saturday]
+  saturday_time = Time.local(saturday_date.year, saturday_date.month, saturday_date.day)
+  # next saturday - 1 second for 23:59 on Friday
+  friday_time = saturday_time + (SECONDS_PER_WEEK) - 1
+  hamster = Timestream::Hamster.new(saturday_time, friday_time)
+  
+  employee_activity_report.updateFromHamster!(hamster)
+end
 
 puts employee_activity_report.to_text_table(options[:date_format])
 
